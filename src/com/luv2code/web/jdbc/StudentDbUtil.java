@@ -3,6 +3,7 @@ package com.luv2code.web.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class StudentDbUtil {
 		Statement myStmt = null;
 		ResultSet myRs = null;
 		
-		try {
+			try {
 			// get a connection
 			myConn = dataSource.getConnection();
 			
@@ -221,10 +222,71 @@ public class StudentDbUtil {
 			close(myConn, myStmt, null);
 		}	
 	}
+
+	public List<Student> searchStudents(String theSearchName) throws SQLException {
+		// TODO Auto-generated method stub
+        List<Student> students = new ArrayList<>();
+        
+        Connection myConn = null;
+        PreparedStatement myStmt = null;
+        ResultSet myRs = null;
+        int studentId;
+        
+        try {
+            
+            // get connection to database
+            myConn = dataSource.getConnection();
+            
+            //
+            // only search by name if theSearchName is not empty
+            //
+            if (theSearchName != null && theSearchName.trim().length() > 0) {
+                // create sql to search for students by name
+                String sql = "select * from student where lower(first_name) like ? or lower(last_name) like ?";
+                // create prepared statement
+                myStmt = myConn.prepareStatement(sql);
+                // set params
+                String theSearchNameLike = "%" + theSearchName.toLowerCase() + "%";
+                myStmt.setString(1, theSearchNameLike);
+                myStmt.setString(2, theSearchNameLike);
+                
+            } else {
+                // create sql to get all students
+                String sql = "select * from student order by last_name";
+                // create prepared statement
+                myStmt = myConn.prepareStatement(sql);
+            }
+            
+            // execute statement
+            myRs = myStmt.executeQuery();
+            
+            // retrieve data from result set row
+            while (myRs.next()) {
+                
+                // retrieve data from result set row
+                int id = myRs.getInt("id");
+                String firstName = myRs.getString("first_name");
+                String lastName = myRs.getString("last_name");
+                String email = myRs.getString("email");
+                
+                // create new student object
+                Student tempStudent = new Student(id, firstName, lastName, email);
+                
+                // add it to the list of students
+                students.add(tempStudent);            
+            }
+            
+            return students;
+        }
+        finally {
+            // clean up JDBC objects
+            close(myConn, myStmt, myRs);
+
+	}}
 }
 
 
-
+	
 
 
 
